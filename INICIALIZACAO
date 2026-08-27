@@ -1,0 +1,14 @@
+#Construir a Imagem (caso queira reconstruir futuramente):
+
+bash
+
+
+docker build -t benchmark-calc .
+
+
+#Rodar o Container:
+
+bash
+
+
+docker run -p 5000:5000 benchmark-calc
