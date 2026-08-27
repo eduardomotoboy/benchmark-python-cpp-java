@@ -1,4 +1,42 @@
 # trabalho-faculdade
+# Comparação de Linguagens: Python vs C++ vs Java
+
+Este projeto apresenta um benchmark simples comparando **tempo de execução** e **consumo de memória** entre três linguagens populares.
+
+---
+
+## 📊 Resultados
+
+### Tabela de comparação
+
+| Linguagem | Tempo (µs) | Memória (KB) |
+|-----------|------------|--------------|
+| 🐍 Python | 52.34      | 12.02        |
+| ⚡ C++    | 41.30      | 120          |
+| ☕ Java   | 1051.17    | 32000        |
+
+---
+
+### Visualização Gráfica
+
+#### Tempo de Execução
+![Gráfico de tempo](https://quickchart.io/chart?c={type:'bar',data:{labels:['Python','C++','Java'],datasets:[{label:'Tempo%20(µs)',data:[52.34,41.3,1051.17],backgroundColor:['%233572A5','%23f34b7d','%23b07219']}]}})
+
+#### Consumo de Memória
+![Gráfico de memória](https://quickchart.io/chart?c={type:'bar',data:{labels:['Python','C++','Java'],datasets:[{label:'Memória%20(KB)',data:[12.02,120,32000],backgroundColor:['%233572A5','%23f34b7d','%23b07219']}]}})
+
+---
+
+## 📌 Conclusão
+
+- ⚡ **C++**: mais rápido, mas consome mais memória.  
+- 🐍 **Python**: equilíbrio entre desempenho e consumo.  
+- ☕ **Java**: maior consumo de memória e tempo mais alto.  
+
+Esses resultados reforçam como cada linguagem tem **trade-offs** diferentes, dependendo do contexto de uso.
+
+---
+
 📁 Estrutura de Pastas do Projeto
 Crie uma pasta no seu computador chamada projeto_calculadora com a seguinte organização:
 
