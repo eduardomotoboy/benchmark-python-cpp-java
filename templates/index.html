@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmark: Python vs C++ vs Java</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Comparador de Desempenho em Tempo Real</h1>
+        <p>Suporta operações básicas, potências (<code>^</code>) e raízes (<code>sqrt(...)</code>)</p>
+        
+        <div class="input-container">
+            <input type="text" id="mathInput" placeholder="Ex: 2 ^ 8 + sqrt(144)" value="2 ^ 8 + sqrt(144)">
+            <button onclick="calcular()">Calcular e Comparar 🚀</button>
+        </div>
+
+        <div class="chips">
+            <span class="chip" onclick="setExpr('3 * 3')">3 * 3</span>
+            <span class="chip" onclick="setExpr('2 ^ 16')">2 ^ 16</span>
+            <span class="chip" onclick="setExpr('sqrt(144) + 10 / 2')">sqrt(144) + 10 / 2</span>
+            <span class="chip" onclick="setExpr('5 ^ 3 * sqrt(25)')">5 ^ 3 * sqrt(25)</span>
+        </div>
+    </header>
+
+    <main class="grid-container">
+        <div class="card python-card">
+            <div class="badge">Interpretada</div>
+            <h2>🐍 Python</h2>
+            <div class="display" id="res-python">--</div>
+            <div class="metrics">
+                <div class="metric-box">
+                    <span class="label">Tempo:</span>
+                    <span class="val" id="time-python">0 µs</span>
+                </div>
+                <div class="metric-box">
+                    <span class="label">Memória:</span>
+                    <span class="val" id="mem-python">0 KB</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card cpp-card">
+            <div class="badge">Nativa / Compilada</div>
+            <h2>⚡ C++</h2>
+            <div class="display" id="res-cpp">--</div>
+            <div class="metrics">
+                <div class="metric-box">
+                    <span class="label">Tempo:</span>
+                    <span class="val" id="time-cpp">0 µs</span>
+                </div>
+                <div class="metric-box">
+                    <span class="label">Memória:</span>
+                    <span class="val" id="mem-cpp">0 KB</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card java-card">
+            <div class="badge">Máquina Virtual</div>
+            <h2>☕ Java</h2>
+            <div class="display" id="res-java">--</div>
+            <div class="metrics">
+                <div class="metric-box">
+                    <span class="label">Tempo:</span>
+                    <span class="val" id="time-java">0 µs</span>
+                </div>
+                <div class="metric-box">
+                    <span class="label">Memória:</span>
+                    <span class="val" id="mem-java">0 KB</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="charts-container">
+        <div class="chart-box">
+            <h3>⏱️ Tempo de Execução (Menor = Mais Rápido)</h3>
+            <canvas id="timeChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>💾 Consumo de Memória (Menor = Mais Leve)</h3>
+            <canvas id="memChart"></canvas>
+        </div>
+    </section>
+
+    <script>
+        function setExpr(val) {
+            document.getElementById('mathInput').value = val;
+            calcular();
+        }
+
+        const ctxTime = document.getElementById('timeChart').getContext('2d');
+        const ctxMem = document.getElementById('memChart').getContext('2d');
+
+        const colors = ['#38bdf8', '#f43f5e', '#f59e0b'];
+
+        const timeChart = new Chart(ctxTime, {
+            type: 'bar',
+            data: {
+                labels: ['Python', 'C++', 'Java'],
+                datasets: [{
+                    label: 'Microssegundos (µs)',
+                    data: [0, 0, 0],
+                    backgroundColor: colors
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        const memChart = new Chart(ctxMem, {
+            type: 'bar',
+            data: {
+                labels: ['Python', 'C++', 'Java'],
+                datasets: [{
+                    label: 'Memória (KB)',
+                    data: [0, 0, 0],
+                    backgroundColor: colors
+                }]
+            },
+            options: { 
+                responsive: true, 
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        type: 'logarithmic',
+                        title: {
+                            display: true,
+                            text: 'KB (Escala Logarítmica)',
+                            color: '#cbd5e1'
+                        },
+                        grid: {
+                            color: '#334155'
+                        },
+                        ticks: {
+                            color: '#cbd5e1'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: '#334155'
+                        },
+                        ticks: {
+                            color: '#cbd5e1'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Aplicando cores de grid no timeChart também para padronizar
+        timeChart.options.scales = {
+            y: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } },
+            x: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } }
+        };
+        timeChart.update();
+
+        async function calcular() {
+            const expr = document.getElementById('mathInput').value;
+            if (!expr) return;
+
+            const response = await fetch('/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ expression: expr })
+            });
+
+            const data = await response.json();
+
+            document.getElementById('res-python').innerText = data.python.result;
+            document.getElementById('time-python').innerText = data.python.time_us + " µs";
+            document.getElementById('mem-python').innerText = data.python.memory_kb + " KB";
+
+            document.getElementById('res-cpp').innerText = data.cpp.result;
+            document.getElementById('time-cpp').innerText = data.cpp.time_us + " µs";
+            document.getElementById('mem-cpp').innerText = data.cpp.memory_kb + " KB";
+
+            document.getElementById('res-java').innerText = data.java.result;
+            document.getElementById('time-java').innerText = data.java.time_us + " µs";
+            document.getElementById('mem-java').innerText = data.java.memory_kb + " KB";
+
+            timeChart.data.datasets[0].data = [data.python.time_us, data.cpp.time_us, data.java.time_us];
+            timeChart.update();
+
+            memChart.data.datasets[0].data = [data.python.memory_kb, data.cpp.memory_kb, data.java.memory_kb];
+            memChart.update();
+        }
+
+        window.onload = calcular;
+    </script>
+</body>
+</html>
+
