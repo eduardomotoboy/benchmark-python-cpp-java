@@ -4,6 +4,7 @@ import math
 import subprocess
 import time
 import tracemalloc
+import re
 from flask import Flask, render_template, request, jsonify
 
 # Inicializa a aplicação web com Flask
@@ -14,6 +15,10 @@ app = Flask(__name__)
 def safe_eval(expr):
     # Substitui o símbolo de potência ^ usado na matemática pelo ** usado no Python
     expr = expr.replace('^', '**')
+    
+    # Remove zeros à esquerda de números inteiros (ex: '01' vira '1') 
+    # pois o Python (ast.parse) não permite números literais começando com zero.
+    expr = re.sub(r'(?<![\d.])0+(?=\d)', '', expr)
     
     # Mapeia os nós da Árvore Sintática Abstrata (AST) para as operações matemáticas correspondentes
     ops = {
