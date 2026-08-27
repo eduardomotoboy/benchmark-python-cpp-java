@@ -1,14 +1,28 @@
-#Construir a Imagem (caso queira reconstruir futuramente):
+=== 1-MODO DE DESENVOLVIMENTO (Docker Compose / Hot-Reload) ===
+# Este é o modo mais rápido para desenvolver. Ele atualiza Python e HTML em tempo real sem precisar reconstruir a imagem.
 
-bash
+# Iniciar o sistema (Trava o terminal para mostrar os logs)
+docker-compose up
+
+# Iniciar o sistema em segundo plano (Libera o terminal)
+docker-compose up -d
+
+# Reiniciar o sistema (Útil para re-compilar mudanças feitas no C++ ou Java)
+docker-compose restart
+
+# Desligar e remover o ambiente
+docker-compose down
 
 
+=== 2-MODO CLÁSSICO (Docker Build Simples) ===
+# Construir a Imagem do zero:
 docker build -t benchmark-calc .
 
+# Rodar o Container (porta 5000):
+docker run -p 5000:5000 benchmark-calc
 
-#Rodar o Container:
-
-bash
-
-
+# Atualização clássica (Pare o docker atual com Ctrl+C e repita os passos):
+# 1. Reconstruir imagem (o ponto . no final é obrigatório)
+docker build -t benchmark-calc .
+# 2. Rodar novamente
 docker run -p 5000:5000 benchmark-calc
