@@ -34,3 +34,4 @@ services:
     # 2º: Compila o código Java gerando a classe 'Calc.class'
     # 3º: Inicia o servidor web Flask ouvindo em todas as interfaces de rede (0.0.0.0)
     command: /bin/sh -c "g++ -O3 calc.cpp -o calc && javac Calc.java && flask run --host=0.0.0.0"
+
