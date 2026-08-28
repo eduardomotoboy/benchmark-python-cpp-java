@@ -1,0 +1,36 @@
+# ==============================================================================
+# ARQUIVO DE ORQUESTRAÇÃO DO DOCKER (docker-compose.yml)
+# Objetivo: Permitir o desenvolvimento ágil (Hot-Reload) sem precisar recriar imagens
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # Define o serviço da nossa aplicação web de benchmark
+  benchmark-app:
+    # Constrói a imagem a partir do Dockerfile presente na pasta atual (.)
+    build: .
+    
+    # Nome amigável para identificar o container em execução
+    container_name: benchmark_dev
+    
+    # Mapeamento de Portas: [Porta da sua Máquina : Porta dentro do Container]
+    # Permite acessar http://localhost:5000 no navegador do seu Windows
+    ports:
+      - "5000:5000"
+      
+    # Volumes: Cria um espelho em tempo real entre a sua pasta local e a pasta /app do container
+    # Qualquer alteração que você salvar no VS Code reflete imediatamente no container
+    volumes:
+      - .:/app
+      
+    # Variáveis de Ambiente para o Flask (Servidor Python)
+    environment:
+      - FLASK_APP=app.py    # Informa qual é o arquivo principal do servidor
+      - FLASK_DEBUG=1       # Ativa o modo de desenvolvimento (reinicia o servidor ao detectar mudanças no código)
+      
+    # Comando de Inicialização Personalizado:
+    # 1º: Compila o código C++ com otimização máxima (-O3) gerando o binário 'calc'
+    # 2º: Compila o código Java gerando a classe 'Calc.class'
+    # 3º: Inicia o servidor web Flask ouvindo em todas as interfaces de rede (0.0.0.0)
+    command: /bin/sh -c "g++ -O3 calc.cpp -o calc && javac Calc.java && flask run --host=0.0.0.0"

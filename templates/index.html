@@ -1,36 +1,64 @@
 <!DOCTYPE html>
+<!-- 
+====================================================================================
+INTERFACE WEB DO BENCHMARK (templates/index.html)
+Objetivo: Criar uma tela visual, moderna e intuitiva que permite ao usuário:
+1. Digitar qualquer expressão matemática (soma, subtração, multiplicação, divisão, potência, raiz).
+2. Enviar a conta simultaneamente para os motores de Python, C++ e Java.
+3. Exibir o resultado, o tempo de execução (microssegundos) e a memória gasta (KB).
+4. Renderizar dois gráficos interativos comparando a performance em tempo real.
+====================================================================================
+-->
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- Configuração para garantir que o layout se adapte bem a telas de celulares e computadores -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benchmark: Python vs C++ vs Java</title>
+    
+    <!-- Folha de estilo externa com as cores escuras (Dark Theme) e layout moderno -->
     <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- Biblioteca Chart.js: Usada para desenhar os gráficos de barras dinâmicos via JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
+    <!-- ========================================== -->
+    <!-- CABEÇALHO: Título, Entrada de Dados e Botões -->
+    <!-- ========================================== -->
     <header>
         <h1>Comparador de Desempenho em Tempo Real</h1>
         <p>Suporta operações básicas, potências (<code>^</code>) e raízes (<code>sqrt(...)</code>)</p>
         
+        <!-- Campo onde o usuário digita a fórmula matemática -->
         <div class="input-container">
             <input type="text" id="mathInput" placeholder="Ex: 2 ^ 8 + sqrt(144)" value="2 ^ 8 + sqrt(144)">
+            <!-- Botão que dispara a função JavaScript 'calcular()' ao ser clicado -->
             <button onclick="calcular()">Calcular e Comparar 🚀</button>
         </div>
 
+        <!-- Botões de Atalho rápido (Chips) com exemplos prontos de contas -->
         <div class="chips">
-            <span class="chip" onclick="setExpr('3 * 3')">3 * 3</span>
-            <span class="chip" onclick="setExpr('2 ^ 16')">2 ^ 16</span>
-            <span class="chip" onclick="setExpr('sqrt(144) + 10 / 2')">sqrt(144) + 10 / 2</span>
-            <span class="chip" onclick="setExpr('5 ^ 3 * sqrt(25)')">5 ^ 3 * sqrt(25)</span>
+            <span class="chip" onclick="setExpr('3 * 3')">3 * 3 (Básica)</span>
+            <span class="chip" onclick="setExpr('2 ^ 16')">2 ^ 16 (Potência)</span>
+            <span class="chip" onclick="setExpr('sqrt(144) + 10 / 2')">sqrt(144) + 10 / 2 (Mista)</span>
+            <span class="chip" onclick="setExpr('5 ^ 3 * sqrt(25)')">5 ^ 3 * sqrt(25) (Avançada)</span>
         </div>
     </header>
 
+    <!-- ==================================================== -->
+    <!-- ÁREA PRINCIPAL: 3 Cards comparativos das linguagens -->
+    <!-- ==================================================== -->
     <main class="grid-container">
+        
+        <!-- 🐍 CARD 1: PYTHON (Linguagem Interpretada) -->
         <div class="card python-card">
             <div class="badge">Interpretada</div>
             <h2>🐍 Python</h2>
+            <!-- Display central com o valor final da conta -->
             <div class="display" id="res-python">--</div>
+            <!-- Métricas de telemetria -->
             <div class="metrics">
                 <div class="metric-box">
                     <span class="label">Tempo:</span>
@@ -43,10 +71,13 @@
             </div>
         </div>
 
+        <!-- ⚡ CARD 2: C++ (Linguagem Compilada Nativa) -->
         <div class="card cpp-card">
             <div class="badge">Nativa / Compilada</div>
             <h2>⚡ C++</h2>
+            <!-- Display central com o valor final da conta -->
             <div class="display" id="res-cpp">--</div>
+            <!-- Métricas de telemetria -->
             <div class="metrics">
                 <div class="metric-box">
                     <span class="label">Tempo:</span>
@@ -59,10 +90,13 @@
             </div>
         </div>
 
+        <!-- ☕ CARD 3: JAVA (Linguagem sobre Máquina Virtual JVM) -->
         <div class="card java-card">
             <div class="badge">Máquina Virtual</div>
             <h2>☕ Java</h2>
+            <!-- Display central com o valor final da conta -->
             <div class="display" id="res-java">--</div>
+            <!-- Métricas de telemetria -->
             <div class="metrics">
                 <div class="metric-box">
                     <span class="label">Tempo:</span>
@@ -76,41 +110,70 @@
         </div>
     </main>
 
+    <!-- ==================================================== -->
+    <!-- SEÇÃO DE GRÁFICOS: Comparativo Visual Lado a Lado   -->
+    <!-- ==================================================== -->
     <section class="charts-container">
+        <!-- Gráfico 1: Tempo de Execução em Microssegundos -->
         <div class="chart-box">
-            <h3>⏱️ Tempo de Execução (Menor = Mais Rápido)</h3>
+            <h3>⏱️ Tempo de Execução (Menor barra = Mais Rápido)</h3>
             <canvas id="timeChart"></canvas>
         </div>
+        <!-- Gráfico 2: Consumo de Memória em Kilobytes -->
         <div class="chart-box">
-            <h3>💾 Consumo de Memória (Menor = Mais Leve)</h3>
+            <h3>💾 Consumo de Memória (Menor barra = Mais Leve)</h3>
             <canvas id="memChart"></canvas>
         </div>
     </section>
 
+    <!-- ==================================================== -->
+    <!-- CÓDIGO JAVASCRIPT: Lógica de Interação e Gráficos    -->
+    <!-- ==================================================== -->
     <script>
+        // Função auxiliar que preenche o campo de texto quando o usuário clica num botão de atalho
         function setExpr(val) {
             document.getElementById('mathInput').value = val;
-            calcular();
+            calcular(); // Dispara o cálculo automaticamente
         }
 
+        // Obtém a referência dos elementos HTML Canvas onde os gráficos serão desenhados
         const ctxTime = document.getElementById('timeChart').getContext('2d');
         const ctxMem = document.getElementById('memChart').getContext('2d');
 
+        // Paleta de cores padronizada: Azul para Python, Vermelho para C++, Laranja para Java
         const colors = ['#38bdf8', '#f43f5e', '#f59e0b'];
 
+        // 1. INICIALIZAÇÃO DO GRÁFICO DE TEMPO (Escala Linear)
         const timeChart = new Chart(ctxTime, {
-            type: 'bar',
+            type: 'bar', // Tipo barra vertical
             data: {
                 labels: ['Python', 'C++', 'Java'],
                 datasets: [{
                     label: 'Microssegundos (µs)',
-                    data: [0, 0, 0],
+                    data: [0, 0, 0], // Inicia zerado até o primeiro cálculo
                     backgroundColor: colors
                 }]
             },
-            options: { responsive: true, plugins: { legend: { display: false } } }
+            options: { 
+                responsive: true, 
+                plugins: { legend: { display: false } }, // Oculta legenda redundante
+                scales: {
+                    y: { 
+                        grid: { color: '#334155' }, 
+                        ticks: { color: '#cbd5e1' },
+                        title: { display: true, text: 'Microssegundos (µs)', color: '#cbd5e1' }
+                    },
+                    x: { 
+                        grid: { color: '#334155' }, 
+                        ticks: { color: '#cbd5e1' } 
+                    }
+                }
+            }
         });
 
+        // 2. INICIALIZAÇÃO DO GRÁFICO DE MEMÓRIA (Escala Logarítmica)
+        // Usamos escala logarítmica para que os valores pequenos (Python: 12 KB, C++: 120 KB) 
+        // continuem visíveis lado a lado com o valor gigante do Java (32.000 KB).
         const memChart = new Chart(ctxMem, {
             type: 'bar',
             data: {
@@ -126,7 +189,7 @@
                 plugins: { legend: { display: false } },
                 scales: {
                     y: {
-                        type: 'logarithmic',
+                        type: 'logarithmic', // <<-- ESCALA LOGARÍTMICA ATIVADA
                         title: {
                             display: true,
                             text: 'KB (Escala Logarítmica)',
@@ -151,46 +214,48 @@
             }
         });
 
-        // Aplicando cores de grid no timeChart também para padronizar
-        timeChart.options.scales = {
-            y: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } },
-            x: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } }
-        };
-        timeChart.update();
-
+        // 3. FUNÇÃO PRINCIPAL DE COMUNICAÇÃO COM O SERVIDOR (Fetch API)
         async function calcular() {
+            // Pega o texto digitado pelo usuário
             const expr = document.getElementById('mathInput').value;
             if (!expr) return;
 
+            // Envia uma requisição HTTP POST assíncrona para o endpoint '/calculate' do Flask
             const response = await fetch('/calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ expression: expr })
+                body: JSON.stringify({ expression: expr }) // Empacota a conta em formato JSON
             });
 
+            // Converte a resposta recebida do servidor Python em um objeto JavaScript
             const data = await response.json();
 
+            // Atualiza os textos dos Cards do Python
             document.getElementById('res-python').innerText = data.python.result;
             document.getElementById('time-python').innerText = data.python.time_us + " µs";
             document.getElementById('mem-python').innerText = data.python.memory_kb + " KB";
 
+            // Atualiza os textos dos Cards do C++
             document.getElementById('res-cpp').innerText = data.cpp.result;
             document.getElementById('time-cpp').innerText = data.cpp.time_us + " µs";
             document.getElementById('mem-cpp').innerText = data.cpp.memory_kb + " KB";
 
+            // Atualiza os textos dos Cards do Java
             document.getElementById('res-java').innerText = data.java.result;
             document.getElementById('time-java').innerText = data.java.time_us + " µs";
             document.getElementById('mem-java').innerText = data.java.memory_kb + " KB";
 
+            // Atualiza as barras do gráfico de Tempo
             timeChart.data.datasets[0].data = [data.python.time_us, data.cpp.time_us, data.java.time_us];
-            timeChart.update();
+            timeChart.update(); // Re-renderiza o gráfico com animação suave
 
+            // Atualiza as barras do gráfico de Memória
             memChart.data.datasets[0].data = [data.python.memory_kb, data.cpp.memory_kb, data.java.memory_kb];
-            memChart.update();
+            memChart.update(); // Re-renderiza o gráfico com animação suave
         }
 
+        // Executa o cálculo da expressão inicial assim que a página terminar de carregar
         window.onload = calcular;
     </script>
 </body>
 </html>
-

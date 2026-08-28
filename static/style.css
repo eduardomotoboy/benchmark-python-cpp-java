@@ -1,27 +1,40 @@
+/*
+====================================================================================
+ESTILIZAÇÃO VISUAL DA APLICAÇÃO WEB (static/style.css)
+Objetivo: Criar uma interface elegante, moderna, responsiva e em tema escuro (Dark Theme),
+proporcionando uma experiência profissional e de fácil leitura para apresentações.
+====================================================================================
+*/
+
+/* 1. RESET GLOBAL: Zera margens e espaçamentos padrão de todos os navegadores */
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-sizing: border-box; /* Garante que 'padding' e 'border' não aumentem a largura dos elementos */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Tipografia moderna e limpa */
 }
 
+/* 2. CORPO DA PÁGINA: Fundo azul escuro profundo e texto claro de alto contraste */
 body {
-    background-color: #0f172a;
-    color: #f8fafc;
-    padding: 30px 20px;
-    text-align: center;
+    background-color: #0f172a; /* Cor de fundo escura (Slate Dark) */
+    color: #f8fafc;            /* Cor do texto quase branca para excelente legibilidade */
+    padding: 30px 20px;        /* Espaçamento interno nas bordas da tela */
+    text-align: center;        /* Centraliza os títulos e blocos principais */
 }
 
+/* 3. CABEÇALHO: Título e descrição do projeto */
 header h1 {
     font-size: 2rem;
     margin-bottom: 8px;
+    letter-spacing: -0.5px;
 }
 
 header p {
-    color: #94a3b8;
+    color: #94a3b8; /* Cor cinza-azulada suave para texto secundário */
     margin-bottom: 20px;
 }
 
+/* Formatação do texto de código em destaque dentro do cabeçalho */
 header code {
     background: #1e293b;
     padding: 2px 6px;
@@ -29,52 +42,63 @@ header code {
     color: #38bdf8;
 }
 
+/* 4. CONTAINER DE ENTRADA: Campo de texto e botão 'Calcular' lado a lado */
 .input-container {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 10px; /* Espaço entre o campo de digitação e o botão */
     margin-bottom: 15px;
 }
 
+/* Campo de digitação de texto da fórmula matemática */
 .input-container input {
     padding: 12px 20px;
     font-size: 1.1rem;
     border-radius: 8px;
-    border: 2px solid #334155;
-    background: #1e293b;
+    border: 2px solid #334155; /* Borda sutil */
+    background: #1e293b;       /* Fundo escuro do input */
     color: white;
     width: 360px;
-    outline: none;
+    outline: none;             /* Remove a borda azul padrão do navegador ao focar */
+    transition: 0.2s border-color;
 }
 
+.input-container input:focus {
+    border-color: #38bdf8;     /* Borda azul clara ao clicar no campo */
+}
+
+/* Botão principal de ação (Calcular e Comparar) */
 .input-container button {
     padding: 12px 24px;
     font-size: 1rem;
     font-weight: bold;
-    background: #3b82f6;
+    background: #3b82f6;       /* Azul royal vibrante */
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: 0.2s background-color, 0.2s transform;
 }
 
+/* Efeito visual ao passar o mouse sobre o botão principal */
 .input-container button:hover {
     background: #2563eb;
+    transform: translateY(-1px); /* Leve elevação tátil */
 }
 
+/* 5. ATALHOS RÁPIDOS (CHIPS): Botões em formato de pílula para testes pré-definidos */
 .chips {
     display: flex;
     justify-content: center;
     gap: 8px;
     margin-bottom: 35px;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Quebra em mais linhas automaticamente em celulares */
 }
 
 .chip {
     background: #1e293b;
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: 20px;      /* Bordas bem arredondadas */
     font-size: 0.85rem;
     cursor: pointer;
     border: 1px solid #334155;
@@ -82,32 +106,44 @@ header code {
     transition: 0.2s;
 }
 
+/* Efeito hover dos botões rápidos */
 .chip:hover {
     background: #334155;
     color: #f8fafc;
+    border-color: #38bdf8;
 }
 
+/* 6. GRADE DOS 3 CARDS (GRID LAYOUT): Distribuição em 3 colunas automáticas */
 .grid-container {
     display: grid;
+    /* Ajusta dinamicamente entre 1, 2 ou 3 colunas dependendo do tamanho da tela */
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
     max-width: 1100px;
     margin: 0 auto 40px auto;
 }
 
+/* Estilo padrão de cada Card de linguagem */
 .card {
     background: #1e293b;
     border-radius: 12px;
     padding: 20px;
     position: relative;
-    border-top: 5px solid #64748b;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    border-top: 5px solid #64748b; /* Borda colorida de identificação no topo */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); /* Sombra suave para dar profundidade */
+    transition: transform 0.2s;
 }
 
-.python-card { border-color: #38bdf8; }
-.cpp-card    { border-color: #f43f5e; }
-.java-card   { border-color: #f59e0b; }
+.card:hover {
+    transform: translateY(-2px); /* Efeito suave de foco ao passar o mouse */
+}
 
+/* Cores de identificação específica para o topo de cada Card */
+.python-card { border-color: #38bdf8; } /* Azul ciano para Python */
+.cpp-card    { border-color: #f43f5e; } /* Vermelho/Rosa para C++ */
+.java-card   { border-color: #f59e0b; } /* Laranja para Java */
+
+/* Selo (Badge) indicativo do modelo de execução da linguagem */
 .badge {
     position: absolute;
     top: 12px;
@@ -119,25 +155,29 @@ header code {
     color: #cbd5e1;
 }
 
+/* Visor digital escuro que destaca o resultado final do cálculo */
 .display {
     font-size: 2rem;
     font-weight: bold;
     margin: 15px 0;
     color: #ffffff;
-    background: #0f172a;
+    background: #0f172a;       /* Fundo preto-azulado de alto contraste */
     padding: 12px;
     border-radius: 8px;
+    letter-spacing: 1px;
 }
 
+/* 7. CAIXAS DE MÉTRICAS (Tempo e Memória) */
 .metrics {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
+/* Cada linha individual de métrica (ex: Tempo: 52 µs) */
 .metric-box {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Texto à esquerda e valor numérico à direita */
     background: #0f172a;
     padding: 8px 12px;
     border-radius: 6px;
@@ -147,6 +187,7 @@ header code {
 .metric-box .label { color: #94a3b8; }
 .metric-box .val { font-weight: bold; color: #38bdf8; }
 
+/* 8. CONTAINER DOS GRÁFICOS (CHART.JS) */
 .charts-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -155,10 +196,12 @@ header code {
     margin: 0 auto;
 }
 
+/* Caixa com fundo escuro que envolve cada gráfico */
 .chart-box {
     background: #1e293b;
     padding: 20px;
     border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
 .chart-box h3 {
@@ -166,4 +209,3 @@ header code {
     margin-bottom: 15px;
     color: #cbd5e1;
 }
-

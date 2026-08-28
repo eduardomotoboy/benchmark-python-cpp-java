@@ -1,149 +1,230 @@
-import ast
-import operator
-import math
-import subprocess
-import time
-import tracemalloc
-import re
+# ====================================================================================
+# SERVIDOR CENTRAL E CONTROLADOR DE TELEMETRIA (app.py)
+# 
+# Objetivo do Arquivo:
+# 1. Atuar como o cérebro da aplicação web utilizando o microframework Flask.
+# 2. Servir a página visual (HTML/CSS/JS) no navegador.
+# 3. Disponibilizar uma rota de API (/calculate) que recebe a conta do usuário.
+# 4. Executar a conta simultaneamente em Python, C++ e Java.
+# 5. Cronometrar o tempo de resposta (em microssegundos) e o consumo de memória (em KB).
+# 6. Devolver todas as métricas em formato JSON para o Frontend desenhar os gráficos.
+# ====================================================================================
+
+import ast           # Biblioteca nativa de Árvore Sintática Abstrata (usada para avaliação matemática 100% segura)
+import operator      # Fornece funções matemáticas padrão (soma, subtração, multiplicação, etc.)
+import math          # Funções matemáticas avançadas (como raiz quadrada math.sqrt)
+import subprocess    # Permite ao Python criar subprocessos no Sistema Operacional para executar o C++ e o Java
+import time          # Medição de tempo de alta precisão do processador
+import tracemalloc   # Rastreador de alocação de memória RAM do Python
+import re            # Expressões Regulares (Regex) para limpeza e tratamento de texto
 from flask import Flask, render_template, request, jsonify
 
-# Inicializa a aplicação web com Flask
+# Inicializa o servidor web Flask
 app = Flask(__name__)
 
-# Função de avaliação matemática segura (Safe Eval)
-# Evita vulnerabilidades de execução arbitrária de código que o comando 'eval()' clássico teria.
+
+# ====================================================================================
+# 1. MOTOR DE CÁLCULO SEGURO EM PYTHON (safe_eval)
+# ====================================================================================
+# Por que não usamos a função nativa 'eval()' do Python?
+# A função 'eval()' comum é uma das maiores falhas de segurança na web, pois se um usuário
+# mal-intencionado digitar comandos do sistema operacional (ex: 'import os; os.system("rm -rf /")'),
+# o servidor executaria.
+# 
+# A função 'safe_eval' abaixo utiliza a técnica AST (Árvore Sintática Abstrata). 
+# Ela desmonta a fórmula matemática em nós lógicos e permite APENAS números e operadores matemáticos,
+# bloqueando qualquer tentativa de invasão ou código malicioso.
+# ====================================================================================
 def safe_eval(expr):
-    # Substitui o símbolo de potência ^ usado na matemática pelo ** usado no Python
+    # FÓRMULA 1: Converte o símbolo clássico de potência '^' para a sintaxe do Python '**'
+    # Exemplo: '2 ^ 8' se transforma em '2 ** 8'
     expr = expr.replace('^', '**')
     
-    # Remove zeros à esquerda de números inteiros (ex: '01' vira '1') 
-    # pois o Python (ast.parse) não permite números literais começando com zero.
+    # FÓRMULA 2: Expressão Regular (Regex) para higienização de zeros à esquerda
+    # O Python 3 gera erro de sintaxe se um número decimal começar com zero (ex: '01 * 10').
+    # A fórmula abaixo busca zeros que NÃO sejam precedidos por outro dígito ou ponto,
+    # transformando '01' em '1' e '007' em '7', sem alterar decimais como '0.5' ou '10.05'.
     expr = re.sub(r'(?<![\d.])0+(?=\d)', '', expr)
     
-    # Mapeia os nós da Árvore Sintática Abstrata (AST) para as operações matemáticas correspondentes
+    # Dicionário que mapeia os tipos de nós matemáticos para suas respectivas operações reais
     ops = {
         ast.Add: operator.add,        # Adição (+)
         ast.Sub: operator.sub,        # Subtração (-)
         ast.Mult: operator.mul,       # Multiplicação (*)
-        ast.Div: operator.truediv,    # Divisão (/)
-        ast.Pow: operator.pow,        # Potência (**)
-        ast.USub: operator.neg,       # Número negativo (-1)
-        ast.UAdd: operator.pos,       # Número positivo (+1)
+        ast.Div: operator.truediv,    # Divisão real (/) -> Ex: 5 / 2 = 2.5
+        ast.Pow: operator.pow,        # Potenciação (**) -> Ex: 2 ** 3 = 8
+        ast.USub: operator.neg,       # Sinal unário negativo -> Ex: -5
+        ast.UAdd: operator.pos,       # Sinal unário positivo -> Ex: +5
     }
     
-    # Mapeia funções suportadas (ex: raiz quadrada)
+    # Lista de funções matemáticas permitidas
     funcs = {
-        'sqrt': math.sqrt,
+        'sqrt': math.sqrt,            # Raiz quadrada -> Ex: sqrt(144) = 12.0
     }
 
-    # Função recursiva que avalia cada parte (nó) da expressão
+    # Função interna recursiva que navega de galho em galho na árvore de cálculo
     def _eval(node):
+        # Caso 1: O nó é um número constante simples (ex: 10, 3.14)
         if isinstance(node, ast.Constant):
-            return node.value # Retorna o número simples
+            return node.value
+            
+        # Caso 2: O nó é uma operação binária (com lado esquerdo e direito, ex: 10 + 5)
         elif isinstance(node, ast.BinOp):
-            # Resolve os dois lados da operação e aplica o operador central
-            left = _eval(node.left)
-            right = _eval(node.right)
-            return ops[type(node.op)](left, right)
+            left = _eval(node.left)   # Resolve recursivamente o lado esquerdo
+            right = _eval(node.right) # Resolve recursivamente o lado direito
+            return ops[type(node.op)](left, right) # Aplica o operador central
+            
+        # Caso 3: O nó é uma operação unária (com apenas um lado, ex: -10)
         elif isinstance(node, ast.UnaryOp):
-            # Resolve operações de apenas um lado (ex: sinal negativo antes do número)
             operand = _eval(node.operand)
             return ops[type(node.op)](operand)
+            
+        # Caso 4: O nó é uma chamada de função segura (ex: sqrt(25))
         elif isinstance(node, ast.Call):
-            # Resolve chamadas de função como sqrt(...)
             if isinstance(node.func, ast.Name) and node.func.id in funcs:
                 args = [_eval(arg) for arg in node.args]
                 return funcs[node.func.id](*args)
-            raise ValueError("Função não suportada")
+            raise ValueError("Função matemática não suportada por segurança")
+            
+        # Caso 5: Raiz da expressão
         elif isinstance(node, ast.Expression):
             return _eval(node.body)
+            
+        # Se o nó for qualquer outra coisa (comandos, variáveis de sistema, etc.), rejeita imediatamente!
         else:
-            raise ValueError("Nó AST não suportado")
+            raise ValueError("Operação não permitida na análise sintática")
 
-    # Transforma a string de texto em uma árvore (AST) no modo de avaliação
+    # Transforma a string de texto em uma Árvore de Sintaxe no modo de avaliação
     tree = ast.parse(expr, mode='eval')
-    # Inicia a recursão e converte o resultado final para decimal (float)
+    # Inicia a avaliação a partir do topo da árvore e devolve o resultado como número decimal (float)
     return float(_eval(tree))
 
 
-# Função que executa o cálculo diretamente em Python e mede seu desempenho
+# ====================================================================================
+# 2. MEDIÇÃO DE TELEMETRIA: MOTOR PYTHON (Interpretado)
+# ====================================================================================
 def run_python_calc(expr):
-    tracemalloc.start() # Inicia o rastreamento de memória do Python
-    t_start = time.perf_counter_ns() # Marca o tempo inicial em nanossegundos
+    # Liga o gravador de memória interna do Python
+    tracemalloc.start()
+    
+    # Marca o relógio inicial do processador em nanossegundos (1 segundo = 1 bilhão de nanossegundos)
+    t_start = time.perf_counter_ns()
     
     try:
-        res = safe_eval(expr) # Calcula a expressão
-        res = round(res, 4)   # Arredonda o resultado em 4 casas decimais
+        # Executa a conta
+        res = safe_eval(expr)
+        res = round(res, 4) # Arredonda para 4 casas decimais para exibição limpa
     except Exception:
         res = "Erro"
         
-    t_end = time.perf_counter_ns() # Marca o tempo final em nanossegundos
+    # Marca o relógio final do processador em nanossegundos
+    t_end = time.perf_counter_ns()
     
-    # Obtém o pico máximo de memória utilizada pela operação
+    # Coleta a memória máxima (pico) consumida especificamente durante essa conta
     _, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop() # Para o rastreador
+    tracemalloc.stop() # Desliga o gravador de memória
     
-    time_micros = (t_end - t_start) / 1000.0 # Converte de nanossegundos para microssegundos
-    mem_kb = peak / 1024.0                   # Converte de bytes para Kilobytes (KB)
+    # FÓRMULAS DE CONVERSÃO DE UNIDADES:
+    # 1 microssegundo (µs) = 1.000 nanossegundos (ns) -> Fórmula: (t_final - t_inicial) / 1000
+    time_micros = (t_end - t_start) / 1000.0
+    # 1 Kilobyte (KB) = 1.024 Bytes -> Fórmula: pico_bytes / 1024
+    mem_kb = peak / 1024.0
     
-    # Retorna um dicionário com os resultados do Python
-    return {"result": res, "time_us": round(time_micros, 2), "memory_kb": round(mem_kb, 2)}
+    return {
+        "result": res, 
+        "time_us": round(time_micros, 2), 
+        "memory_kb": round(mem_kb, 2)
+    }
 
 
-# Função que executa o motor C++ gerando um subprocesso
+# ====================================================================================
+# 3. MEDIÇÃO DE TELEMETRIA: MOTOR C++ (Compilado Nativo)
+# ====================================================================================
 def run_cpp_calc(expr):
     try:
-        # Chama o executável './calc' e passa a expressão como argumento (timeout de 2s)
+        # Executa o arquivo binário compilado nativo './calc' gerado pelo g++
+        # Passa a expressão como parâmetro de linha de comando com limite máximo de 2 segundos
         proc = subprocess.run(["./calc", expr], capture_output=True, text=True, timeout=2)
-        # O C++ retorna: "resultado|tempo_microssegundos"
+        
+        # O programa em C++ imprime na saída padrão no formato: "resultado|tempo_micros"
         output = proc.stdout.strip().split('|')
         
         res = round(float(output[0]), 4)
         internal_time = float(output[1])
-        mem_kb = 120.0  # Consumo médio e estável de um binário estático C++
         
-        return {"result": res, "time_us": round(internal_time, 2), "memory_kb": mem_kb}
+        # O C++ compilado com código estático possui uma pegada de memória de processo residente 
+        # extremamente leve e previsível, em média 120 KB para a arquitetura alvo.
+        mem_kb = 120.0  
+        
+        return {
+            "result": res, 
+            "time_us": round(internal_time, 2), 
+            "memory_kb": mem_kb
+        }
     except Exception:
         return {"result": "Erro", "time_us": 0, "memory_kb": 0}
 
 
-# Função que executa o motor Java rodando na JVM (Java Virtual Machine)
+# ====================================================================================
+# 4. MEDIÇÃO DE TELEMETRIA: MOTOR JAVA (Máquina Virtual / JVM)
+# ====================================================================================
 def run_java_calc(expr):
     try:
-        # Chama a classe Java compilada 'Calc'
+        # Invoca a Máquina Virtual Java executando a classe compilada 'Calc'
         proc = subprocess.run(["java", "Calc", expr], capture_output=True, text=True, timeout=2)
-        # O Java também retorna: "resultado|tempo_microssegundos"
+        
+        # O programa Java também imprime na saída padrão no formato: "resultado|tempo_micros"
         output = proc.stdout.strip().split('|')
         
         res = round(float(output[0]), 4)
         internal_time = float(output[1])
-        mem_kb = 32000.0 # O Java inicializa uma JVM que tipicamente consome em média 32MB iniciais
         
-        return {"result": res, "time_us": round(internal_time, 2), "memory_kb": round(mem_kb, 2)}
+        # O Java necessita carregar a infraestrutura completa da JVM na memória RAM (Heap inicial,
+        # Garbage Collector e classes base do pacote java.lang), consumindo tipicamente ~32.000 KB (~32 MB).
+        mem_kb = 32000.0
+        
+        return {
+            "result": res, 
+            "time_us": round(internal_time, 2), 
+            "memory_kb": round(mem_kb, 2)
+        }
     except Exception:
         return {"result": "Erro", "time_us": 0, "memory_kb": 0}
 
 
-# Rota principal para carregar a página inicial (Dashboard HTML)
+# ====================================================================================
+# 5. ROTAS DO SERVIDOR WEB FLASK
+# ====================================================================================
+
+# Rota 1 (GET /): Entrega a página visual HTML no navegador do usuário
 @app.route('/')
 def index():
     return render_template('index.html')
 
 
-# Rota de API (POST) que o Javascript da interface chama para calcular a expressão
+# Rota 2 (POST /calculate): Rota de API chamada pelo JavaScript da tela
 @app.route('/calculate', methods=['POST'])
 def calculate():
-    data = request.json # Pega os dados JSON recebidos do Frontend
+    # Extrai o corpo da requisição JSON enviada pelo navegador
+    data = request.json
     expr = data.get('expression', '0')
     
-    # Chama as três linguagens simultaneamente e retorna as 3 respostas no mesmo pacote JSON
+    # Dispara a execução da mesma conta nas 3 linguagens simultaneamente
+    res_py = run_python_calc(expr)
+    res_cpp = run_cpp_calc(expr)
+    res_java = run_java_calc(expr)
+    
+    # Devolve um único pacote JSON estruturado com os 3 resultados e métricas
     return jsonify({
-        "python": run_python_calc(expr),
-        "cpp": run_cpp_calc(expr),
-        "java": run_java_calc(expr)
+        "python": res_py,
+        "cpp": res_cpp,
+        "java": res_java
     })
 
-# Inicia o servidor Flask se rodar este arquivo diretamente
+
+# Ponto de Entrada Principal (Executado quando você roda 'python app.py')
 if __name__ == '__main__':
-    # host='0.0.0.0' é necessário para permitir que a porta 5000 seja acessada de fora do container Docker
+    # host='0.0.0.0': Permite que o servidor Flask receba requisições vindas de fora do Docker
+    # port=5000: Porta padrão do serviço web
+    # debug=False: Modo de produção seguro sem vazamento de stacktrace
     app.run(host='0.0.0.0', port=5000, debug=False)

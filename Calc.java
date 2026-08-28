@@ -1,97 +1,155 @@
-// Biblioteca para usar as listas nativas (ArrayList, List)
-import java.util.*;
+// ====================================================================================
+// MOTOR DE CÁLCULO EM JAVA (Calc.java)
+// 
+// Objetivo do Arquivo:
+// 1. Ser executado sobre a Máquina Virtual Java (JVM).
+// 2. Receber a fórmula matemática via argumento de linha de comando (args[0]).
+// 3. Fazer a separação léxica (Tokenização) e avaliar as operações com precedência matemática:
+//    - Passo 0: Resolução prévia de raízes quadradas (sqrt)
+//    - Passo 1: Potenciação (^)
+//    - Passo 2: Multiplicação (*) e Divisão (/)
+//    - Passo 3: Adição (+) e Subtração (-)
+// 4. Medir o tempo de cálculo em nanossegundos via System.nanoTime().
+// 5. Imprimir o resultado padronizado "RESULTADO|TEMPO_MICROSSEGUNDOS".
+// ====================================================================================
+
+import java.util.*; // Importa coleções fundamentais como List, ArrayList
 
 public class Calc {
 
-    // Função que substitui a presença de 'sqrt(...)' pelos seus respectivos valores calculados antes de avaliar o resto
+    // ================================================================================
+    // FUNÇÃO 1: PRÉ-PROCESSADOR DE RAÍZES QUADRADAS (processSqrt)
+    // Objetivo: Encontra e calcula expressões como 'sqrt(144)', substituindo por '12.0'
+    // ================================================================================
     private static String processSqrt(String expr) {
+        // Enquanto houver ocorrência de "sqrt(" no texto da fórmula
         while (expr.contains("sqrt(")) {
             int start = expr.indexOf("sqrt(");
             int end = expr.indexOf(")", start);
-            if (end == -1) break; // Garante que a expressão está bem formatada
+            if (end == -1) break; // Proteção contra sintaxe mal formatada
             
-            // Pega o número dentro dos parênteses e transforma num tipo Double
-            double val = Double.parseDouble(expr.substring(start + 5, end).trim());
-            // Substitui 'sqrt(x)' pelo seu resultado raiz na string principal
-            expr = expr.substring(0, start) + Math.sqrt(val) + expr.substring(end + 1);
+            // FÓRMULA DE RECORTE: Extrai o número entre 'sqrt(' e ')'
+            String innerNum = expr.substring(start + 5, end).trim();
+            double val = Double.parseDouble(innerNum);
+            
+            // FÓRMULA MATEMÁTICA: Calcula a raiz quadrada com Math.sqrt()
+            double sqrtResult = Math.sqrt(val);
+            
+            // Substitui o bloco "sqrt(X)" pelo valor calculado na string original
+            expr = expr.substring(0, start) + sqrtResult + expr.substring(end + 1);
         }
-        return expr;
+        return expr; // Devolve a fórmula limpa
     }
 
-    // Função principal que lê a string inteira da conta e converte no resultado numérico
+
+    // ================================================================================
+    // FUNÇÃO 2: AVALIADOR MATEMÁTICO PRINCIPAL (evaluate)
+    // Objetivo: Separar tokens e resolver na ordem estrita de precedência
+    // ================================================================================
     public static double evaluate(String expr) {
-        expr = processSqrt(expr); // Tratamento inicial para as raízes
+        // Passo 0: Trata as raízes quadradas
+        expr = processSqrt(expr);
         
-        // Expressão regular que divide o texto sempre que há um sinal (mantendo os sinais no array de resultados)
+        // FÓRMULA REGEX DE TOKENIZAÇÃO:
+        // Divide o texto mantendo os operadores (+, -, *, /, ^) na lista de tokens
+        // O lookahead (?=[...]) e lookbehind (?<=[...]) dividem antes e depois dos símbolos
         String[] tokens = expr.split("(?<=[-+*/^])|(?=[-+*/^])");
         
-        List<Double> numbers = new ArrayList<>();   // Lista de números da conta
-        List<Character> ops = new ArrayList<>();    // Lista de operadores aritméticos
-        
-        // O loop classifica os pedaços separados de texto (tokens) entre números e operadores
+        // Listas dinâmicas para armazenar números e operadores separadamente
+        List<Double> numbers = new ArrayList<>();
+        List<Character> ops = new ArrayList<>();
+
+        // Percorre cada pedaço de texto (token) e classifica se é número ou operador
         for (String t : tokens) {
             t = t.trim();
             if (t.isEmpty()) continue;
+            
+            // Se for um operador aritmético
             if ("+-*/^".contains(t)) {
-                ops.add(t.charAt(0)); // Adiciona na lista de caracteres/operadores
+                ops.add(t.charAt(0));
             } else {
-                numbers.add(Double.parseDouble(t)); // Adiciona na lista de números decimais
+                // Se for um número, converte para decimal de dupla precisão (Double)
+                numbers.add(Double.parseDouble(t));
             }
         }
 
-        if (numbers.isEmpty()) return 0; // Proteção contra cálculo fantasma/vazio
+        // Se a lista estiver vazia, retorna zero
+        if (numbers.isEmpty()) return 0;
 
-        // PASSO 1: Resolve todas as potências antes de todo o resto
+        // ============================================================================
+        // REGRA DE PRECEDÊNCIA 1: POTÊNCIA (^)
+        // ============================================================================
         for (int i = 0; i < ops.size(); ) {
             if (ops.get(i) == '^') {
-                numbers.set(i, Math.pow(numbers.get(i), numbers.get(i + 1))); // Calcula a base elevada ao expoente
-                numbers.remove(i + 1); // Remove os elementos já usados das duas listas
-                ops.remove(i);
+                // FÓRMULA MATEMÁTICA: Math.pow(base, expoente) -> Ex: 2 ^ 4 = 16
+                double base = numbers.get(i);
+                double exponent = numbers.get(i + 1);
+                double powerResult = Math.pow(base, exponent);
+                
+                numbers.set(i, powerResult); // Atualiza a posição com o resultado
+                numbers.remove(i + 1);       // Remove o número da direita já usado
+                ops.remove(i);               // Remove o operador já usado
             } else {
-                i++;
+                i++; // Avança se não for potência
             }
         }
 
-        // PASSO 2: Resolve todas as multiplicações e divisões da esquerda para a direita
+        // ============================================================================
+        // REGRA DE PRECEDÊNCIA 2: MULTIPLICAÇÃO (*) E DIVISÃO (/)
+        // ============================================================================
         for (int i = 0; i < ops.size(); ) {
             char op = ops.get(i);
             if (op == '*' || op == '/') {
-                double next = numbers.get(i + 1);
-                // Proteção simples contra divisão por zero para não falhar a execução do teste
-                double res = (op == '*') ? numbers.get(i) * next : numbers.get(i) / (next == 0 ? 1 : next);
+                double num1 = numbers.get(i);
+                double num2 = numbers.get(i + 1);
                 
-                numbers.set(i, res);   // Armazena a resposta no lugar do primeiro número
-                numbers.remove(i + 1); // Limpa as sobras usadas
+                // FÓRMULA MATEMÁTICA: Multiplica ou Divide (com proteção contra divisão por zero)
+                double res = (op == '*') ? (num1 * num2) : (num1 / (num2 == 0 ? 1 : num2));
+                
+                numbers.set(i, res);   // Substitui pelo resultado
+                numbers.remove(i + 1); // Remove elementos usados
                 ops.remove(i);
             } else {
-                i++;
+                i++; // Avança se for soma ou subtração
             }
         }
 
-        // PASSO 3: Conclui processando todas as adições e subtrações 
+        // ============================================================================
+        // REGRA DE PRECEDÊNCIA 3: ADIÇÃO (+) E SUBTRAÇÃO (-)
+        // ============================================================================
         double total = numbers.get(0);
         for (int i = 0; i < ops.size(); i++) {
-            if (ops.get(i) == '+') total += numbers.get(i + 1);
-            if (ops.get(i) == '-') total -= numbers.get(i + 1);
+            if (ops.get(i) == '+') total += numbers.get(i + 1); // FÓRMULA: total + próximo
+            if (ops.get(i) == '-') total -= numbers.get(i + 1); // FÓRMULA: total - próximo
         }
         
-        return total; // Devolve o número com a conta totalmente encerrada
+        return total; // Retorna o valor final calculado
     }
 
-    // Função de entrada do Java que o console ou processo principal do sistema chamará
+
+    // ================================================================================
+    // FUNÇÃO PRINCIPAL DE ENTRADA DO JAVA (main)
+    // ================================================================================
     public static void main(String[] args) {
-        // Exige que um argumento textual (a conta) seja passado
+        // Validação: Exige que a fórmula tenha sido passada como primeiro argumento
         if (args.length < 1) return;
         
-        // Medição do tempo de execução da JVM com alta precisão (nanoTime)
+        // MEDIÇÃO DE TEMPO NATIVO DA JVM:
+        // Marca o tempo inicial do processador em nanossegundos
         long start = System.nanoTime();
-        double res = evaluate(args[0]); // Invoca o avaliador
+        
+        // Executa a conta
+        double res = evaluate(args[0]);
+        
+        // Marca o tempo final em nanossegundos
         long end = System.nanoTime();
         
-        // Converte nanossegundos para microssegundos, mantendo precisão decimal
+        // FÓRMULA DE CONVERSÃO DE UNIDADES:
+        // 1 microssegundo (µs) = 1.000 nanossegundos (ns) -> Fórmula: (end - start) / 1000.0
         double timeMicros = (end - start) / 1000.0;
         
-        // Cospe os dados (resultado e tempo) divididos pelo pipe '|' que o servidor Python irá interpretar
+        // Imprime a resposta padronizada com delimitador pipe '|'
+        // Exemplo: "268.0|110854.02"
         System.out.println(res + "|" + timeMicros);
     }
 }
