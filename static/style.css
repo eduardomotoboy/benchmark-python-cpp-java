@@ -16,6 +16,7 @@ proporcionando uma experiência profissional e de fácil leitura para apresenta�
 
 /* 2. CORPO DA PÁGINA: Fundo azul escuro profundo e texto claro de alto contraste */
 body {
+    position: relative;        /* Permite o posicionamento absoluto do logo no canto superior */
     background-color: #0f172a; /* Cor de fundo escura (Slate Dark) */
     color: #f8fafc;            /* Cor do texto quase branca para excelente legibilidade */
     padding: 30px 20px;        /* Espaçamento interno nas bordas da tela */
@@ -40,6 +41,43 @@ header code {
     padding: 2px 6px;
     border-radius: 4px;
     color: #38bdf8;
+}
+
+/* 3.1 LOGO DA FACULDADE: Posicionado no canto superior direito */
+.university-logo-container {
+    position: absolute;
+    top: 25px;
+    right: 30px;
+    background: #ffffff;             /* Fundo branco limpo para realçar as cores oficiais do logo */
+    padding: 6px 14px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Sombra suave para destacar sobre o tema escuro */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.university-logo-container:hover {
+    transform: translateY(-2px);     /* Leve elevação tátil ao passar o mouse */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55);
+}
+
+.university-logo {
+    height: 44px;                    /* Altura proporcional e elegante */
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+/* Ajuste Responsivo: Em telas menores ou celulares, centraliza acima do título para não sobrepor o texto */
+@media (max-width: 900px) {
+    .university-logo-container {
+        position: static;
+        margin: 0 auto 20px auto;
+        display: inline-flex;
+    }
 }
 
 /* 4. CONTAINER DE ENTRADA: Campo de texto e botão 'Calcular' lado a lado */
