@@ -1,4 +1,18 @@
-=== 1-MODO DE DESENVOLVIMENTO (Docker Compose / Hot-Reload) ===
+=== 1-AUTOMAÇÃO COM GIT (Git Hook post-commit) [ATIVADO] ===
+# Sempre que você fizer um 'git commit', o Docker é atualizado automaticamente!
+# O script (.githooks/post-commit) para o container anterior, reconstrói a imagem e sobe o novo container na porta 5000.
+# Basta comitar normalmente:
+git add .
+git commit -m "Sua mensagem de alteração"
+# (O terminal executará a atualização do Docker sozinho logo após o commit)
+
+# Caso queira desativar a automação no futuro:
+# git config --unset core.hooksPath
+# Para reativar:
+# git config core.hooksPath .githooks
+
+
+=== 2-MODO DE DESENVOLVIMENTO (Docker Compose / Hot-Reload) ===
 # Este é o modo mais rápido para desenvolver. Ele atualiza Python e HTML em tempo real sem precisar reconstruir a imagem.
 
 # Iniciar o sistema (Trava o terminal para mostrar os logs)
@@ -14,15 +28,14 @@ docker-compose restart
 docker-compose down
 
 
-=== 2-MODO CLÁSSICO (Docker Build Simples) ===
+=== 3-MODO CLÁSSICO (Docker Build Manual) ===
 # Construir a Imagem do zero:
 docker build -t benchmark-calc .
 
 # Rodar o Container (porta 5000):
-docker run -p 5000:5000 benchmark-calc
+docker run -d -p 5000:5000 --name benchmark-calc benchmark-calc
 
-# Atualização clássica (Pare o docker atual com Ctrl+C e repita os passos):
-# 1. Reconstruir imagem (o ponto . no final é obrigatório)
+# Atualização clássica manual (Parar container antigo, reconstruir e rodar):
+docker rm -f benchmark-calc
 docker build -t benchmark-calc .
-# 2. Rodar novamente
-docker run -p 5000:5000 benchmark-calc
+docker run -d -p 5000:5000 --name benchmark-calc benchmark-calc

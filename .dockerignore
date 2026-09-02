@@ -1,0 +1,15 @@
+# Arquivos e pastas ignorados na construção da imagem Docker
+# Evita enviar arquivos pesados desnecessários para o Docker Daemon, acelerando o build
+
+.git
+.gitignore
+oracleJdk-26/
+*.docx
+*.MD
+*.png
+!static/*.png
+__pycache__/
+*.class
+calc
+calc.exe
+
